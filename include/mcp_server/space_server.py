@@ -10,11 +10,11 @@ from __future__ import annotations
 import csv
 from pathlib import Path
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 
 CSV_DIR = Path(__file__).parent.parent / "csvs"
 
-mcp = FastMCP("space-logistics")
+mcp = MCPServer("space-logistics")
 
 
 @mcp.tool()

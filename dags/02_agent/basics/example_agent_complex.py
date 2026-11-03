@@ -1,14 +1,18 @@
 """
 ## example_agent_complex
 
-Every constructor parameter of `@task.agent` / `AgentOperator` in one file:
-`SQLToolset` against the seeded `space_logistics` database, `usage_limits`,
-`durable` step caching, and a tracked `message_history` session.
+Many `@task.agent` / `AgentOperator` parameters combined in one file:
+`SQLToolset` against the seeded `space_logistics` database,
+`enable_tool_logging`, `agent_params`, `usage_limits`, `durable` step
+caching, a tracked `message_history` session, and `serialize_output`.
 
-`code_mode` and `enable_hitl_review` are written out but switched off. Both
-conflict with `durable=True`, and `code_mode` also wants the `code-mode` extra,
-which this project doesn't install. Same Ceres supply run as
-`example_agent_basic`, with the tools and the knobs added.
+`enable_hitl_review` and its settings are written out but switched off,
+because `enable_hitl_review=True` can't be combined with `durable=True` or
+with `message_history`. Same Ceres supply run as `example_agent_basic`, with
+the tools and the parameters added.
+
+Not set here: `fallback_conn_ids`, `capabilities`, `cache_prompt`,
+`emit_message_history` and the `tool_approval_*` parameters.
 """
 
 from __future__ import annotations
@@ -78,10 +82,6 @@ def example_agent_complex():
             total_tokens_limit=50_000,
         ),
         durable=True,
-        # Mutually exclusive with durable=True (AgentOperator raises
-        # ValueError if both are set); also requires the `code-mode` extra
-        # (pydantic-ai-harness), which isn't installed here.
-        code_mode=False,
         # "[]" starts a tracked session: the full transcript gets pushed to
         # this task's XCom under key "message_history" for a follow-up turn
         # to resume. The default, None, is a single-turn run with no push.

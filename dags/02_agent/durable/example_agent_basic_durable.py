@@ -12,7 +12,7 @@ tools run in order:
 3. `double_random_number` takes that same string back and doubles it.
 
 The random number is the same before and after the retry because on Airflow 3.3
-`durable=True` caches each tool result in the task state store:
+and later `durable=True` caches each tool result in the task state store:
 https://www.astronomer.io/docs/learn/airflow-task-state-store
 
 `durable=True` and `enable_hitl_review=True` cannot both be set.

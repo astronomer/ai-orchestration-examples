@@ -2,10 +2,14 @@
 ## support_ticket_crewai
 
 The `support_ticket_common_ai` flow with a single-agent CrewAI crew drafting
-the reply inside a plain `@task`. CrewAI's role/goal/backstory slots take the
-shared prompt: the system prompt becomes the agent's goal, the user prompt
-becomes the crew task description. Telemetry is switched off in-task with
-`CREWAI_DISABLE_TELEMETRY`.
+the reply. CrewAI's role/goal/backstory slots take the shared prompt: the
+system prompt becomes the agent's goal, the user prompt becomes the crew task
+description. Telemetry is switched off in-task with `CREWAI_DISABLE_TELEMETRY`.
+
+The CrewAI task runs in a `@task.virtualenv` because every CrewAI release
+requires `openai<3`, while the Common AI provider needs a `pydantic-ai-slim`
+version that requires `openai>=3`. The virtualenv installs CrewAI and
+`openai` 2.x for this task only.
 """
 
 from __future__ import annotations
@@ -18,12 +22,7 @@ from airflow.providers.standard.operators.hitl import (
 )
 from airflow.sdk import Param, chain, dag, task
 
-from include.custom_functions import (
-    SYSTEM_PROMPT,
-    build_user_prompt,
-    get_open_tickets,
-    lookup_shipment,
-)
+from include.custom_functions import get_open_tickets
 from include.models import TicketResponse
 
 
@@ -38,7 +37,12 @@ def support_ticket_crewai():
 
     _fetch_pending_ticket = fetch_pending_ticket()
 
-    @task
+    @task.virtualenv(
+        requirements=["crewai==1.15.30", "openai==2.54.0"],
+        system_site_packages=False,
+        # Only resolve transitive dependencies published at least 7 days before this pin date.
+        pip_install_options=["--exclude-newer", "2026-10-27"],
+    )
     def generate_ai_response(ticket: dict) -> dict:
         import os
 
@@ -47,6 +51,13 @@ def support_ticket_crewai():
         from crewai import Agent, Crew
         from crewai import Task as CrewTask
         from crewai.tools import tool as crew_tool
+
+        from include.custom_functions import (
+            SYSTEM_PROMPT,
+            build_user_prompt,
+            lookup_shipment,
+        )
+        from include.models import TicketResponse
 
         @crew_tool("lookup_shipment")
         def lookup_shipment_tool(shipment_id: str) -> dict:

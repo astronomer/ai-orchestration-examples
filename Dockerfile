@@ -1,1 +1,1 @@
-FROM astrocrpublic.azurecr.io/runtime:3.3-6-python-3.13
+FROM astrocrpublic.azurecr.io/runtime-dev:3.4-1-alpha6

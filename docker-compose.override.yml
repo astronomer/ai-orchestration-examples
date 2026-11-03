@@ -21,3 +21,58 @@ services:
       - "8233:8233"
     networks:
       - airflow
+
+  # OpenSandbox server for the SandboxToolset example. It starts each sandbox as a
+  # sibling container through the host's Docker socket, so it has control of your
+  # local Docker. It publishes no port: only containers on the airflow network reach it.
+  opensandbox-server:
+    image: opensandbox/server:release-1.2.0@sha256:25bebdcf1cf7724eb923faecbdbbf82d4038c6ab35c736151574726d14006f30
+    networks:
+      - airflow
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    configs:
+      - source: opensandbox-config
+        target: /etc/opensandbox/config.toml
+    environment:
+      SANDBOX_CONFIG_PATH: /etc/opensandbox/config.toml
+      # No API key: the server is only reachable from the airflow network.
+      OPENSANDBOX_INSECURE_SERVER: "YES"
+
+configs:
+  opensandbox-config:
+    content: |
+      [server]
+      host = "0.0.0.0"
+      port = 8090
+
+      [proxy]
+      resolve_internal = false
+
+      [runtime]
+      type = "docker"
+      execd_image = "opensandbox/execd:release-1.2.0@sha256:c75836c46ef4302afccec182d5d7339eb2f905f51e3d73b7aa17bb76c832526c"
+
+      [egress]
+      image = "opensandbox/egress:release-1.2.0@sha256:a3d30246e557525f3fa44d16226258268cea175532e652822bd1eb4e83e0f54d"
+      # dns+nft drops connections at the address layer. The Common AI backend refuses
+      # deny-all or allowlist sandboxes in the default dns mode.
+      mode = "dns+nft"
+      readiness_timeout_seconds = 30.0
+
+      [docker]
+      network_mode = "bridge"
+      host_ip = "host.docker.internal"
+      # Publish sandbox ports on localhost only. Docker binds them to every interface
+      # by default, which would expose each sandbox's command endpoint to your network.
+      publish_host = "127.0.0.1"
+      port_range_min = 40000
+      port_range_max = 60000
+      drop_capabilities = ["AUDIT_WRITE", "MKNOD", "NET_ADMIN", "NET_RAW", "SYS_ADMIN", "SYS_MODULE", "SYS_PTRACE", "SYS_TIME", "SYS_TTY_CONFIG"]
+      no_new_privileges = true
+      pids_limit = 4096
+
+      [ingress]
+      mode = "direct"

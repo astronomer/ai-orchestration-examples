@@ -1,15 +1,15 @@
 """
 ## example_agent_multi_toolset
 
-One agent, three toolsets: `SQLToolset` for the warehouse, `HookToolset` for
-the fixtures filesystem, and a `LoggingToolset` wrapper so you can see which of
-them the agent called.
+One agent, two toolsets: `SQLToolset` for the warehouse, `HookToolset` for
+the fixtures filesystem. Tool-call logging is on by default
+(`enable_tool_logging=True`), so the task log shows which toolset the agent
+called.
 """
 
 from __future__ import annotations
 
 from airflow.providers.common.ai.toolsets.hook import HookToolset
-from airflow.providers.common.ai.toolsets.logging import LoggingToolset
 from airflow.providers.common.ai.toolsets.sql import SQLToolset
 from airflow.providers.standard.hooks.filesystem import FSHook
 from airflow.sdk import dag, task
@@ -46,11 +46,9 @@ def example_agent_multi_toolset():
             "filesystem tools for file existence checks."
         ),
         toolsets=[
-            LoggingToolset(
-                wrapped=SQLToolset(
-                    db_conn_id="space_logistics",
-                    allowed_tables=["pilots", "spacecraft", "space_stations"],
-                )
+            SQLToolset(
+                db_conn_id="space_logistics",
+                allowed_tables=["pilots", "spacecraft", "space_stations"],
             ),
             HookToolset(
                 hook=FSHook(fs_conn_id="fixtures_fs"),

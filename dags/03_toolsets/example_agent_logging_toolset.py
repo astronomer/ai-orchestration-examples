@@ -1,14 +1,14 @@
 """
 ## example_agent_logging_toolset
 
-`LoggingToolset` wrapped around `SQLToolset`. The wrapper intercepts every tool
-call and logs it as it happens, which is how you watch what an agent is doing
-without touching the toolset underneath.
+Tool-call logging for `SQLToolset`. With `enable_tool_logging=True` (the
+default, set explicitly here), the operator adds a `ToolLoggingCapability`
+that logs every tool call as it happens, which is how you watch what an agent
+is doing without touching the toolset underneath.
 """
 
 from __future__ import annotations
 
-from airflow.providers.common.ai.toolsets.logging import LoggingToolset
 from airflow.providers.common.ai.toolsets.sql import SQLToolset
 from airflow.sdk import dag, task
 
@@ -20,7 +20,7 @@ from include.seed import seed_primary
         "common-ai",
         "feature-example",
         "task.agent",
-        "logging-toolset",
+        "tool-logging",
         "sql-toolset",
     ],
     doc_md=__doc__,
@@ -40,7 +40,8 @@ def example_agent_logging_toolset():
     @task.agent(
         llm_conn_id="pydanticai_default",
         system_prompt="Answer the user's question using SQL tools.",
-        toolsets=[LoggingToolset(wrapped=sql_toolset)],
+        toolsets=[sql_toolset],
+        enable_tool_logging=True,
     )
     def logged_query(question: str) -> str:
         return question

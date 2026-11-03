@@ -14,3 +14,4 @@ dev
 .astro/config.local.lock 
 .astro/config.local.yaml
 .astro/config.lock
+logs/
